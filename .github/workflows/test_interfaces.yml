@@ -25,10 +25,16 @@ jobs:
         run: python scripts/test_interfaces.py
 
       - name: Commit and push changes
+        env:
+          TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
           git add data/sources.json
+          git commit -m "Auto update interfaces" || echo "No changes to commit"
+          git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+          git push origin HEAD:${{ github.ref_name }}
+
 
           # 如果有更新再提交，附带 [skip ci] 避免触发循环
           git diff --cached --quiet || git commit -m "Auto update interfaces [skip ci]"
