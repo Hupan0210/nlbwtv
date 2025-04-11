@@ -21,9 +21,6 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Debug Git Remote
-        run: git remote -v
-
       - name: Run interface test script
         run: python scripts/test_interfaces.py
 
@@ -33,11 +30,7 @@ jobs:
         run: |
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
-          git add data/sources.json
+          git add data/sources.json docs/data.json
           git diff --cached --quiet || git commit -m "Auto update interfaces [skip ci]"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
           git push origin HEAD:${{ github.ref_name }}
-
-            # 如果有更新再提交，附带 [skip ci] 避免触发循环
-          git diff --cached --quiet || git commit -m "Auto update interfaces [skip ci]"
-          git push
