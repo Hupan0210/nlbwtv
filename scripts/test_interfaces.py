@@ -33,3 +33,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# 统计部分
+total = len(sources)
+success = sum(1 for s in sources if s["status"] == "success")
+fail = total - success
+success_rate = round((success / total) * 100, 2)
+
+print(f"接口总数: {total}")
+print(f"成功数量: {success}")
+print(f"失败数量: {fail}")
+print(f"成功率: {success_rate}%")
