@@ -1,0 +1,28 @@
+name: Test Interfaces Daily
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天 UTC 2:00 执行，根据实际需求调整时间
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install requests
+      - name: Run interface test script
+        run: python scripts/test_interfaces.py
+      - name: Commit and push changes
+        run: |
+          git config --local user.name "GitHub Actions"
+          git config --local user.email "actions@github.com"
+          git add data/sources.json
+          git commit -m "Auto update interfaces" || echo "No changes to commit"
+          git push
