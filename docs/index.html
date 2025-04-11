@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TVBox 接口状态面板</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans">
+  <div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6 text-center">📺 TVBox 接口状态 Dashboard</h1>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center mb-6">
+      <div class="bg-gray-800 p-4 rounded-xl shadow">
+        <p class="text-sm text-gray-400">接口总数</p>
+        <p id="totalCount" class="text-2xl font-bold">0</p>
+      </div>
+      <div class="bg-green-700 p-4 rounded-xl shadow">
+        <p class="text-sm text-gray-200">成功</p>
+        <p id="successCount" class="text-2xl font-bold">0</p>
+      </div>
+      <div class="bg-red-700 p-4 rounded-xl shadow">
+        <p class="text-sm text-gray-200">失败</p>
+        <p id="failCount" class="text-2xl font-bold">0</p>
+      </div>
+      <div class="bg-blue-700 p-4 rounded-xl shadow">
+        <p class="text-sm text-gray-200">成功率</p>
+        <p id="successRate" class="text-2xl font-bold">0%</p>
+      </div>
+    </div>
+
+    <canvas id="statusChart" class="mb-8"></canvas>
+
+    <div class="bg-gray-800 rounded-xl p-4 shadow">
+      <h2 class="text-xl font-semibold mb-4">📋 接口列表</h2>
+      <div id="interfaceList" class="space-y-3"></div>
+    </div>
+  </div>
+
+  <script>
+    fetch('../data/sources.json')
+      .then(res => res.json())
+      .then(data => {
+        const total = data.length;
+        const success = data.filter(s => s.success).length;
+        const fail = total - success;
+        const rate = total > 0 ? ((success / total) * 100).toFixed(1) : 0;
+
+        document.getElementById('totalCount').textContent = total;
+        document.getElementById('successCount').textContent = success;
+        document.getElementById('failCount').textContent = fail;
+        document.getElementById('successRate').textContent = rate + '%';
+
+        new Chart(document.getElementById('statusChart'), {
+          type: 'doughnut',
+          data: {
+            labels: ['成功', '失败'],
+            datasets: [{
+              data: [success, fail],
+              backgroundColor: ['#10B981', '#EF4444'],
+            }],
+          },
+        });
+
+        const listContainer = document.getElementById('interfaceList');
+        data.forEach(source => {
+          const item = document.createElement('div');
+          item.className = 'p-3 rounded-lg bg-gray-700 flex justify-between items-center';
+
+          const name = source.name || source.url;
+          const status = source.success ? '✅ 成功' : '❌ 失败';
+
+          item.innerHTML = `<div><strong>${name}</strong><br/><small class="text-gray-400">${source.url}</small></div><span>${status}</span>`;
+          listContainer.appendChild(item);
+        });
+      });
+  </script>
+</body>
+</html>
