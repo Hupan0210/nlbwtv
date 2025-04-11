@@ -35,7 +35,7 @@ jobs:
       - name: Commit and push changes
         if: success()
         env:
-          TOKEN: ${{ secrets.GH_TOKEN }}
+          TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
