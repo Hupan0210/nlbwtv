@@ -8,10 +8,14 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      TOKEN: ${{ secrets.MY_TOKEN }}  # 将TOKEN设为全局环境变量
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 拉取完整历史
 
       - name: Cache Python dependencies
         uses: actions/cache@v3
@@ -34,20 +38,27 @@ jobs:
 
       - name: Commit and push changes
         if: success()
-        env:
-          TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
+          # 配置Git用户信息
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
+
+          # 添加更改的文件
           git add data/sources.json docs/data.json
 
-          # 如果无变化就退出
+          # 检查是否有更改，无则退出
           git diff --cached --quiet && echo "✅ No changes to commit" && exit 0
 
+          # 提交更改
           git commit -m "Auto update interfaces [skip ci]"
+
+          # 设置远程仓库URL（使用TOKEN认证）
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/Hupan0210/nlbwtv.git
 
-          # 强推，防止远程有更新阻塞
+          # 拉取远程最新更改并变基本地提交
+          git pull --rebase origin main
+
+          # 强制推送更改
           git push --force-with-lease origin HEAD:main
 
       - name: Notify on failure
