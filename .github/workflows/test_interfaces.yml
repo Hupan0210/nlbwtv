@@ -2,7 +2,7 @@ name: Test Interfaces Daily
 
 on:
   schedule:
-    - cron: '0 18 * * *'  # UTC 18:00 = 北京时间凌晨 2 点
+    - cron: '0 18 * * *'  # 每天 UTC 18:00 = 北京时间凌晨 2 点
   workflow_dispatch:
 
 jobs:
@@ -41,18 +41,14 @@ jobs:
           git config --local user.email "actions@github.com"
           git add data/sources.json docs/data.json
 
-          # 如果没有改动就直接退出
-          git diff --cached --quiet && echo "No changes to commit" && exit 0
+          # 如果无变化就退出
+          git diff --cached --quiet && echo "✅ No changes to commit" && exit 0
 
           git commit -m "Auto update interfaces [skip ci]"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/Hupan0210/nlbwtv.git
 
-          # 拉取更新成功再 push
-          if git pull --rebase origin main; then
-            git push origin HEAD:main
-          else
-            echo "⚠️ Git pull 失败，跳过推送。"
-          fi
+          # 强推，防止远程有更新阻塞
+          git push --force-with-lease origin HEAD:main
 
       - name: Notify on failure
         if: failure()
