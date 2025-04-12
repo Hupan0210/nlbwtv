@@ -3,7 +3,7 @@ name: Test Interfaces Daily
 on:
   schedule:
     - cron: '0 18 * * *'  # 每天 UTC 18:00 = 北京时间凌晨 2 点
-  workflow_dispatch:
+  workflow_dispatch:       # 允许手动触发
 
 jobs:
   test:
@@ -42,15 +42,17 @@ jobs:
           git add data/sources.json docs/data.json
           git diff --cached --quiet || git commit -m "Auto update interfaces [skip ci]"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/Hupan0210/nlbwtv.git
+          git pull --rebase origin main
           git push origin HEAD:main
 
       - name: Notify on failure
         if: failure()
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: 1,  // ✅ 改成你用来接收通知的 issue 编号
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: "🚨 接口测试失败，请检查日志！"
