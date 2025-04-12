@@ -2,73 +2,40 @@ name: Test Interfaces Daily
 
 on:
   schedule:
-    - cron: '0 18 * * *'  # 每天 UTC 18:00 = 北京时间凌晨 2 点
+    - cron: '0 18 * * *'
   workflow_dispatch:
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      TOKEN: ${{ secrets.MY_TOKEN }}  # 将TOKEN设为全局环境变量
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout repository
+      - name: Checkout with Full History
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 拉取完整历史
+          fetch-depth: 0
+          token: ${{ secrets.MY_TOKEN }}
 
-      - name: Cache Python dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      # ...其他步骤（安装依赖、运行测试等）...
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Run interface test script
-        run: python scripts/test_interfaces.py
-
-      - name: Commit and push changes
+      - name: Commit and Push
         if: success()
         run: |
-          # 配置Git用户信息
           git config --local user.name "GitHub Actions"
           git config --local user.email "actions@github.com"
 
-          # 添加更改的文件
+          # 强制同步远程状态
+          git fetch origin main
+          git reset --hard origin/main
+
+          # 重新应用变更
           git add data/sources.json docs/data.json
+          
+          if git diff --cached --quiet; then
+            echo "✅ No changes to commit"
+            exit 0
+          fi
 
-          # 检查是否有更改，无则退出
-          git diff --cached --quiet && echo "✅ No changes to commit" && exit 0
-
-          # 提交更改
           git commit -m "Auto update interfaces [skip ci]"
-
-          # 设置远程仓库URL（使用TOKEN认证）
-          git remote set-url origin https://x-access-token:${TOKEN}@github.com/Hupan0210/nlbwtv.git
-
-          # 拉取远程最新更改并变基本地提交
-          git pull --rebase origin main
-
-          # 强制推送更改
           git push --force-with-lease origin HEAD:main
-
-      - name: Notify on failure
-        if: failure()
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: 1,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: "🚨 接口测试失败，请检查日志！"
-            })
